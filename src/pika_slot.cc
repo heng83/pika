@@ -268,18 +268,20 @@ static int migrateHash(const std::string dest_ip, const int64_t dest_port, const
         return 0;
     }
 
+    LOG(INFO) << "try to migrate hash:" << key << " to " << dest_ip  << ":" << dest_port << " size:" << keySize;
+
     pink::PinkCli *cli = pink::NewRedisCli();
     pink::RedisCmdArgsType argv;
     std::string send_str;
-    for (size_t i = 0; i <= keySize/MaxKeySendSize; ++i){
+    for (size_t i = 0; i <= keySize/g_pika_conf->slotmigratesize(); ++i){
         if (0 < i){
-            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*MaxKeySendSize, keySize);
+            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*g_pika_conf->slotmigratesize(), keySize);
         }
         argv.clear();
         send_str = "";
         argv.push_back("hmset");
         argv.push_back(key);
-        for (size_t j = i*MaxKeySendSize; j < (i+1)*MaxKeySendSize && j < keySize; ++j){
+        for (size_t j = i*g_pika_conf->slotmigratesize(); j < (i+1)*g_pika_conf->slotmigratesize() && j < keySize; ++j){
             argv.push_back(fvs[j].field);
             argv.push_back(fvs[j].val);
         }
@@ -327,15 +329,15 @@ static int migrateList(const std::string dest_ip, const int64_t dest_port, const
     pink::PinkCli *cli = pink::NewRedisCli();
     pink::RedisCmdArgsType argv;
     std::string send_str;
-    for (size_t i = 0; i <= keySize/MaxKeySendSize; ++i){
+    for (size_t i = 0; i <= keySize/g_pika_conf->slotmigratesize(); ++i){
         if (0 < i){
-            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*MaxKeySendSize, keySize);
+            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*g_pika_conf->slotmigratesize(), keySize);
         }
         argv.clear();
         send_str = "";
         argv.push_back("lpush");
         argv.push_back(key);
-        for (size_t j = i*MaxKeySendSize; j < (i+1)*MaxKeySendSize && j < keySize; ++j){
+        for (size_t j = i*g_pika_conf->slotmigratesize(); j < (i+1)*g_pika_conf->slotmigratesize() && j < keySize; ++j){
             argv.push_back(ivs[j].val);
         }
         pink::SerializeRedisCommand(argv, &send_str);
@@ -382,15 +384,15 @@ static int migrateSet(const std::string dest_ip, const int64_t dest_port, const 
     pink::PinkCli *cli = pink::NewRedisCli();
     pink::RedisCmdArgsType argv;
     std::string send_str;
-    for (size_t i = 0; i <= keySize/MaxKeySendSize; ++i){
+    for (size_t i = 0; i <= keySize/g_pika_conf->slotmigratesize(); ++i){
         if (0 < i){
-            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*MaxKeySendSize, keySize);
+            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*g_pika_conf->slotmigratesize(), keySize);
         }
         argv.clear();
         send_str = "";
         argv.push_back("sadd");
         argv.push_back(key);
-        for (size_t j = i*MaxKeySendSize; j < (i+1)*MaxKeySendSize && j < keySize; ++j){
+        for (size_t j = i*g_pika_conf->slotmigratesize(); j < (i+1)*g_pika_conf->slotmigratesize() && j < keySize; ++j){
             argv.push_back(members[j]);
         }
         pink::SerializeRedisCommand(argv, &send_str);
@@ -437,15 +439,15 @@ static int migrateZset(const std::string dest_ip, const int64_t dest_port, const
     pink::PinkCli *cli = pink::NewRedisCli();
     pink::RedisCmdArgsType argv;
     std::string send_str;
-    for (size_t i = 0; i <= keySize/MaxKeySendSize; ++i){
+    for (size_t i = 0; i <= keySize/g_pika_conf->slotmigratesize(); ++i){
         if (0 < i){
-            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*MaxKeySendSize, keySize);
+            LOG(WARNING) << "Migrate big key: "<< key <<" size: " << keySize << " migrated value: " << min((i+1)*g_pika_conf->slotmigratesize(), keySize);
         }
         argv.clear();
         send_str = "";
         argv.push_back("zadd");
         argv.push_back(key);
-        for (size_t j = i*MaxKeySendSize; j < (i+1)*MaxKeySendSize && j < keySize; ++j){
+        for (size_t j = i*g_pika_conf->slotmigratesize(); j < (i+1)*g_pika_conf->slotmigratesize() && j < keySize; ++j){
             argv.push_back(std::to_string(sms[j].score));
             argv.push_back(sms[j].member);
         }
@@ -627,7 +629,8 @@ void SlotsMgrtTagOneCmd::DoInitial(PikaCmdArgsType &argv, const CmdInfo* const p
         return;
     }
 
-    key_ = slash::StringToLower(*it++);
+    //key_ = slash::StringToLower(*it++);
+    key_ = *it++;
 
     slot_num_ = SlotNum(key_);
 }

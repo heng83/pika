@@ -3,6 +3,7 @@
 
 #include "SSDB_client.h"
 #include "nemo.h"
+#include "nemo_const.h"
 
 const int kBatchLen = 1000;
 const int kSplitNum = 500000;
@@ -78,12 +79,14 @@ void MigrateHash(const std::string& ip, const int port,
   std::vector<std::string> fvs;
   ssdb::Status status_ssdb;
   nemo::Status status_nemo;
+  std::vector<nemo::FV> toPika;
 
   std::string prev_start_field = "";
   for (auto iter = keys.begin(); iter != keys.end(); iter++) {
     prev_start_field = "";
     while (true) {
       fvs.clear();
+      toPika.clear();
       status_ssdb = client->hscan(*iter, prev_start_field, "", kBatchLen, &fvs);
       if (!status_ssdb.ok() || fvs.size() % 2 != 0) {
         std::cout << "Hash client hscan error" << std::endl;
@@ -93,15 +96,23 @@ void MigrateHash(const std::string& ip, const int port,
       if (fvs.empty()) {
         break;
       }
+
       for (auto it = fvs.begin(); it != fvs.end(); it+=2) {
-//        std::cout << "hset " << *iter << " " << *it << " " << *(it+1) << std::endl;
-        status_nemo = db->HSet(*iter, *it, *(it+1));
-        if (!status_nemo.ok()) {
-          std::cout << "Hash client hset error, key: " << *iter << std::endl;
-          delete client;
-          return;
-        }
+        nemo::FV entity;
+        entity.field = *it;
+        entity.val = *(it+1);
+        toPika.push_back(entity);
       }
+
+      status_nemo = db->HMSet(*iter, toPika);
+      if (!status_nemo.ok()) {
+        std::cout << "Hash client hset error, key: " << *iter << std::endl;
+        delete client;
+        return;
+      } else {
+        std::cout << "Hash migrating, key: " << *iter << " size: " << toPika.size() << std::endl;
+      }
+
       prev_start_field = fvs[fvs.size() - 2];
     }
   }

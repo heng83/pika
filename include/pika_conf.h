@@ -42,6 +42,7 @@ class PikaConf : public slash::BaseConf {
   std::string requirepass()     { RWLock l(&rwlock_, false); return requirepass_; }
   std::string masterauth()     { RWLock l(&rwlock_, false); return masterauth_; }
   bool slotmigrate()     { RWLock l(&rwlock_, false); return slotmigrate_; }
+  int slotmigratesize()     { RWLock l(&rwlock_, false); return slotmigratesize_; }
   std::string bgsave_path()     { RWLock l(&rwlock_, false); return bgsave_path_; }
   int expire_dump_days() { RWLock l(&rwlock_, false); return expire_dump_days_; }
   std::string bgsave_prefix()     { RWLock l(&rwlock_, false); return bgsave_prefix_; }
@@ -109,6 +110,10 @@ class PikaConf : public slash::BaseConf {
     RWLock l(&rwlock_, true);
     slotmigrate_ =  (value == "yes") ? true : false;
   }
+  void SetSlotMigrateSize(const int value) {
+    RWLock l(&rwlock_, true);
+    slotmigratesize_ = value;
+  }
   void SetUserPass(const std::string &value) {
     RWLock l(&rwlock_, true);
     userpass_ = value;
@@ -173,6 +178,7 @@ private:
   int log_level_;
   bool daemonize_;
   bool slotmigrate_;
+  int slotmigratesize_;
   int timeout_;
   std::string requirepass_;
   std::string masterauth_;

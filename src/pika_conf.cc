@@ -197,6 +197,7 @@ int PikaConf::Load()
   std::string smgrt;
   GetConfStr("slotmigrate", &smgrt);
   slotmigrate_ =  (smgrt == "yes") ? true : false;
+  GetConfInt("slotmigratesize", &slotmigratesize_);
 
   // db sync
   GetConfStr("db-sync-path", &db_sync_path_);
@@ -236,6 +237,7 @@ int PikaConf::ConfigRewrite() {
   SetConfStr("dump-prefix", bgsave_prefix_);
   SetConfStr("daemonize", daemonize_ ? "yes" : "no");
   SetConfStr("slotmigrate", slotmigrate_ ? "yes" : "no");
+  SetConfInt("slotmigratesize", slotmigratesize_);
   SetConfStr("dump-path", bgsave_path_);
   SetConfInt("dump-expire", expire_dump_days_);
   SetConfStr("pidfile", pidfile_);
